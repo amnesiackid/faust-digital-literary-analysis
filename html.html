@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Faust 1 Reader & Stats</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        /* ========== Global ========== */
+        body {
+            font-family: "Segoe UI", sans-serif;
+            line-height: 1.6;
+            margin: 0; padding: 0;
+            color: #222; background: #fff;
+        }
+        main, header, section {
+            padding: 1rem;
+        }
+        h1, h2 {
+            margin: 1rem 0 0.5rem;
+            color: #111;
+        }
+        p { margin: .5rem 0; }
+
+        /* ========== Header/Nav ========== */
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+        }
+        header .title { flex: 1; font-size: 1.25rem; padding-left: 1rem; }
+        header select, header button {
+            margin: .5rem;
+            padding: .5rem 1rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+        }
+        header button:hover, header select:hover { border-color: #999; }
+
+        /* ========== Content ========== */
+        #content { max-width: 800px; margin: auto; }
+
+        /* ========== Stats Panel ========== */
+        #statsPanel {
+            max-width: 800px; margin: auto;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            display: none;
+        }
+        #statsPanel table {
+            width: 100%; border-collapse: collapse; margin: 0;
+        }
+        #statsPanel th, #statsPanel td {
+            padding: .5rem; border: 1px solid #ddd; text-align: left;
+        }
+        #statsPanel th {
+            background: #eee; cursor: pointer;
+        }
+        #statsPanel tr:nth-child(even) { background: #fff; }
+        #statsPanel tr:nth-child(odd) { background: #fefefe; }
+    </style>
+</head>
+<body>
+
+    <header role="banner" aria-label="Primary">
+        <div class="title">Faust 1 Reader</div>
+        <label for="sceneSelect" class="sr-only">Select Scene</label>
+        <select id="sceneSelect" aria-controls="content"></select>
+        <button id="statsToggle" aria-expanded="false">Stats</button>
+        <button id="githubBtn">GitHub</button>
+    </header>
+
+    <main id="content" role="main" tabindex="0">
+        <!-- Scene content injected here -->
+    </main>
+
+    <section id="statsPanel" aria-hidden="true">
+        <table aria-describedby="statsDesc">
+            <caption id="statsDesc" class="sr-only">Scene statistics with sortable columns.</caption>
+            <thead><tr></tr></thead>
+            <tbody></tbody>
+        </table>
+    </section>
+
+    <script>
+        // ========== Globals ==========
+        let xmlDoc;
+        const sceneSelect = document.getElementById('sceneSelect');
+        const content = document.getElementById('content');
+        const statsToggle = document.getElementById('statsToggle');
+        const statsPanel = document.getElementById('statsPanel');
+        const statsTable = statsPanel.querySelector('table');
+
+        // ========== Initialization ==========
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch('faust.xml')
+                .then(r => r.text())
+                .then(str => (new DOMParser()).parseFromString(str, 'application/xml'))
+                .then(doc => {
+                    xmlDoc = doc;
+                    buildMenu();
+                    showScene(0);
+                })
+                .catch(e => content.textContent = 'Error loading XML: ' + e);
+        });
+
+        // ========== Build Dropdown from XML ==========
+        function buildMenu() {
+            const scenes = Array.from(xmlDoc.querySelectorAll('scene'));
+            scenes.forEach((scene, i) => {
+                const title = scene.getAttribute('title') || `Scene ${i+1}`;
+                const opt = document.createElement('option');
+                opt.value = i; opt.textContent = title;
+                sceneSelect.append(opt);
+            });
+            sceneSelect.addEventListener('change', () => {
+                showScene(+sceneSelect.value);
+                hideStats();
+            });
+        }
+
+        // ========== Display a Scene ==========
+        function showScene(idx) {
+            // map dropdown index to your two text files with correct .txt extensions
+            const files = [
+                'data/Faust._Der_Tragoedie_erster_Teil.11g9p.0.txt',
+                'data/Faust._Der_Tragoedie_zweiter_Teil.11d12.0.txt'
+            ];
+            const url = files[idx];
+            if (!url) {
+                content.textContent = 'Scene not found.';
+                return;
+            }
+
+            fetch(url)
+                .then(r => {
+                    if (!r.ok) throw new Error(r.statusText);
+                    return r.text();
+                })
+                .then(text => {
+                    // clear and add a heading
+                    content.innerHTML = '';
+                    const title = sceneSelect.options[idx].textContent;
+                    const h2 = document.createElement('h2');
+                    h2.textContent = title;
+                    content.appendChild(h2);
+
+                    // split on blank lines and wrap each block in a <p>
+                    text.trim()
+                            .split(/\r?\n\s*\r?\n/)
+                            .forEach(block => {
+                                const p = document.createElement('p');
+                                p.textContent = block.trim();
+                                content.appendChild(p);
+                            });
+
+                    content.focus();
+                })
+                .catch(err => {
+                    content.textContent = 'Error loading scene: ' + err;
+                });
+        }
+        
+
+        // ========== GitHub Button ==========
+        document.getElementById('githubBtn').addEventListener('click', () => {
+            window.open('https://github.com/your-username/your-repo', '_blank');
+        });
+
+        // ========== Stats Toggle ==========
+        statsToggle.addEventListener('click', () => {
+            const shown = statsPanel.style.display === 'block';
+            if (shown) hideStats(); else showStats();
+        });
+
+        function showStats() {
+            statsToggle.setAttribute('aria-expanded', 'true');
+            statsPanel.style.display = 'block';
+            statsPanel.setAttribute('aria-hidden', 'false');
+            loadStats();
+        }
+
+        function hideStats() {
+            statsToggle.setAttribute('aria-expanded', 'false');
+            statsPanel.style.display = 'none';
+            statsPanel.setAttribute('aria-hidden', 'true');
+        }
+
+        // ========== Load & Render Stats ==========
+        function loadStats() {
+            fetch('book1_scene_stats.json')
+                .then(r => r.ok ? r.json() : Promise.reject('no JSON'))
+                .catch(() =>
+                    fetch('scene_stats.csv')
+                        .then(r => r.text())
+                        .then(parseCSV)
+                )
+                .then(data => renderStats(data))
+                .catch(e => {
+                    statsPanel.innerHTML = '<p>Error loading stats: ' + e + '</p>';
+                });
+        }
+
+        // ========== Render & Sortable Table ==========
+        function renderStats(data) {
+            if (!data || !data.length) {
+                statsPanel.innerHTML = '<p>No stats available.</p>';
+                return;
+            }
+            const cols = Object.keys(data[0]);
+            const theadRow = statsTable.tHead.rows[0];
+            theadRow.innerHTML = '';
+            cols.forEach(col => {
+                const th = document.createElement('th');
+                th.textContent = col;
+                th.tabIndex = 0;
+                th.addEventListener('click', () => sortTable(col, data));
+                theadRow.appendChild(th);
+            });
+
+            const tbody = statsTable.tBodies[0];
+            tbody.innerHTML = '';
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                cols.forEach(col => {
+                    const td = document.createElement('td');
+                    td.textContent = row[col];
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ========== Table Sorting ==========
+        let sortAsc = {};
+        function sortTable(col, data) {
+            sortAsc[col] = !sortAsc[col];
+            data.sort((a, b) => {
+                const v1 = a[col], v2 = b[col];
+                return (isNaN(v1) || isNaN(v2))
+                    ? (v1 > v2 ? 1 : -1)
+                    : (v1 - v2);
+            });
+            if (!sortAsc[col]) data.reverse();
+            renderStats(data);
+        }
+
+        // ========== CSV Parser ==========
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines.shift().split(',');
+            return lines.map(line => {
+                const vals = line.split(',');
+                return headers.reduce((obj, h, i) => {
+                    obj[h] = vals[i]; return obj;
+                }, {});
+            });
+        }
+    </script>
+</body>
+</html>
