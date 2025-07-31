@@ -50,6 +50,8 @@ The database schemata of the resulting database is:
 }
 ```
 
+A presentation of the textual data is shown in faust_web.html
+
 Once desired data are extracted, as shown in sample file book1_scene_stats.json, you can use [MongoDB](https://www.mongodb.com/)
  database to visualize extracted data.
 ## Contributing
