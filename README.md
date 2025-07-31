@@ -2,7 +2,7 @@
 
 This is a collabrated student project for Text Technology.
 
-This project explores structural encoding, transformation, and interactive visualization of literary drama using XML technologies. 
+This project explores structural encoding, transformation, character network analysis and interactive visualization of literary drama using XML technologies and Python-based tools. 
 
 The analyzed text are retrieved from [Textgrid Repository](https://textgridrep.org/).
 
@@ -54,6 +54,12 @@ A presentation of the textual data is shown in faust_web.html
 
 Once desired data are extracted, as shown in sample file book1_scene_stats.json, you can use [MongoDB](https://www.mongodb.com/)
  database to visualize extracted data.
+
+
+You can also run `Faust_TEI_Full_Processing.ipynb` to extract scenes, speakers, and poetic lines from the TEI XML. This notebook enhances each scene by adding attributes such as `rhyme_ends` (the final words in poetic lines), `speakers_unique` (a list of unique characters), and `speaker_freq` (character frequency per scene).
+
+The script also generates word frequency data and calculates speaker co-occurrence across scenes. Output files include `faust_characters_nodes.csv`, `faust_character_cooccurrence.csv`, `faust_scene_character.csv`, and `faust_total_wordfreq.csv`. These can be visualized using `networkx` or imported into Neo4j for further network analysis.
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first
