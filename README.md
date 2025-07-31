@@ -33,7 +33,7 @@ conda activate faust-tei
 You can use data_prep.ipynb to extract desired data, such as rhyme parts, word frequency, line counts, etc.
 
 The database schemata of the resulting database is:
-```json
+```jsonc
 {
   "scene_num": "Int",          // Scene number
   "scene_title": "Str",         // Scene title, eg. "Nacht."
